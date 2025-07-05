@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Inventario</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+	/* Variables CSS para facilitar la gestión de colores y fuentes */
+:root {
+    --primary-color: #4CAF50; /* Verde brillante para acciones principales */
+    --secondary-color: #6c757d; /* Gris para botones secundarios */
+    --accent-color: #007bff; /* Azul para enlaces/énfasis */
+    --danger-color: #dc3545; /* Rojo para acciones peligrosas */
+    --background-color: #f8f9fa; /* Fondo claro general */
+    --card-background: #ffffff; /* Fondo blanco para tarjetas y modales */
+    --text-color: #343a40; /* Color de texto oscuro */
+    --border-color: #dee2e6; /* Color de borde sutil */
+    --shadow-color: rgba(0, 0, 0, 0.1); /* Sombra ligera */
+
+    --stock-high-color: #28a745; /* Verde para stock alto */
+    --stock-medium-color: #ffc107; /* Amarillo para stock medio */
+    --stock-low-color: #dc3545; /* Rojo para stock bajo */
+
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Reset básico para box-sizing */
+html {
+    box-sizing: border-box;
+}
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+
+/* Estilos globales para el cuerpo de la página */
+body {
+    font-family: var(--font-family);
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    align-items: center; /* Centra el contenido principal */
+}
+
+/* Estilos del encabezado */
+header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 20px 0;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.2em;
+}
+
+/* Contenido principal */
+main {
+    flex-grow: 1;
+    width: 100%;
+    max-width: 1200px; /* Ancho máximo para el contenido principal */
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex; /* Permite centrar el texto inicial y el dashboard */
+    flex-direction: column;
+    align-items: center; /* Centra horizontalmente */
+    justify-content: flex-start; /* Alinea al inicio verticalmente */
+}
+
+.initial-text {
+    font-size: 1.2em;
+    color: var(--secondary-color);
+    text-align: center;
+    margin-top: 50px;
+}
+
+/* Estilos del Dashboard */
+.dashboard-content {
+    display: none; /* Oculto por defecto, se muestra con JS */
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Dashboard Resumen */
+.summary-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+    width: 100%;
+}
+
+.summary-card {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 5px var(--shadow-color);
+}
+
+.summary-card h3 {
+    color: var(--secondary-color);
+    font-size: 1.1em;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.summary-card p {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin: 0;
+}
+
+/* Gráfico de Barras de Ventas */
+.chart-container-wrapper {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 5px var(--shadow-color);
+    width: 100%;
+    max-width: 800px; /* Limita el ancho del gráfico */
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+}
+
+.chart-container-wrapper h3 {
+    text-align: center;
+    color: var(--text-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.4em;
+}
+
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px 0;
+    min-height: 150px; /* Altura mínima para el gráfico */
+    justify-content: center; /* Centra el mensaje si no hay datos */
+    align-items: center;
+}
+
+.bar-chart-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 30px; /* Altura de cada barra */
+    gap: 10px;
+}
+
+.bar-label {
+    width: 120px; /* Ancho fijo para las etiquetas de producto */
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--text-color);
+    text-align: right;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis; /* Puntos suspensivos para nombres largos */
+}
+
+.bar-graph {
+    flex-grow: 1; /* La barra ocupa el espacio restante */
+    background-color: var(--border-color); /* Fondo del "track" de la barra */
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    height: 100%;
+}
+
+.bar-fill {
+    height: 100%;
+    background-color: var(--accent-color);
+    width: 0%; /* Controlado por JS */
+    transition: width 0.8s ease-out; /* Animación de llenado */
+    display: flex;
+    align-items: center;
+    padding-left: 5px;
+    box-sizing: border-box;
+}
+
+.bar-value {
+    color: white;
+    font-size: 0.85em;
+    font-weight: bold;
+    text-shadow: 0 0 2px rgba(0,0,0,0.4);
+    position: absolute;
+    right: 5px; /* Valor a la derecha de la barra */
+}
+
+.no-data-message {
+    color: var(--secondary-color);
+    font-style: italic;
+    text-align: center;
+    width: 100%;
+}
+
+
+.dashboard-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Espacio entre botones */
+    margin-bottom: 25px;
+    flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas pequeñas */
+}
+
+.action-btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Espacio entre icono y texto */
+    font-weight: 600;
+}
+
+.action-btn i {
+    font-size: 1.1em;
+}
+
+.primary-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.primary-btn:hover {
+    background-color: #45a049; /* Tono más oscuro de verde */
+    transform: translateY(-2px);
+}
+
+.secondary-btn {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.secondary-btn:hover {
+    background-color: #5a6268; /* Tono más oscuro de gris */
+    transform: translateY(-2px);
+}
+
+.danger-btn {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.danger-btn:hover {
+    background-color: #c82333; /* Tono más oscuro de rojo */
+    transform: translateY(-2px);
+}
+
+.accent-btn { /* Nuevo color para el botón EDITAR */
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.accent-btn:hover {
+    background-color: #0069d9;
+    transform: translateY(-2px);
+}
+
+/* Contenedor de búsqueda */
+.search-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto 25px auto;
+}
+
+.search-input {
+    width: calc(100% - 40px); /* Ajusta para dejar espacio al icono */
+    padding: 12px 15px 12px 40px; /* Padding para el icono */
+    border: 1px solid var(--border-color);
+    border-radius: 25px;
+    font-size: 1em;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--secondary-color);
+}
+
+/* Mensajes del Dashboard (éxito/error) */
+.dashboard-message {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: 500;
+    min-height: 20px; /* Asegura un espacio mínimo */
+}
+
+/* Contenedor de productos */
+.products-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Columnas responsivas */
+    gap: 25px; /* Espacio entre tarjetas */
+    width: 100%;
+    padding-top: 10px;
+}
+
+/* Tarjetas de producto */
+.product-card {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 5px var(--shadow-color);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-color);
+}
+
+.product-card.selected {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5); /* Anillo azul alrededor */
+}
+
+.product-card img {
+    max-width: 100%;
+    height: 150px; /* Altura fija para las imágenes */
+    object-fit: contain; /* Mantiene la proporción de la imagen */
+    border-radius: 5px;
+    margin-bottom: 15px;
+    background-color: #e9ecef; /* Fondo claro para imágenes */
+}
+
+.product-card h3 {
+    font-size: 1.3em;
+    margin: 10px 0;
+    color: var(--text-color);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis; /* Puntos suspensivos para nombres largos */
+}
+
+.product-card p {
+    font-size: 1.1em;
+    color: var(--accent-color);
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+/* Modificación: Estilo para el contenedor del stock-display (ahora será el "track" de la barra) */
+.stock-display {
+    display: flex; /* Usamos flexbox para alinear el texto y la barra */
+    align-items: center; /* Centra verticalmente */
+    justify-content: space-between; /* Espacio entre texto y barra */
+    font-size: 0.95em;
+    color: var(--text-color); /* Color de texto más neutral */
+    font-weight: 600;
+    background-color: #e9ecef;
+    padding: 5px 10px;
+    border-radius: 5px;
+    margin-top: auto; /* Empuja el stock hacia abajo */
+    height: 30px; /* Altura fija para el contenedor del minigráfico */
+    box-sizing: border-box;
+    overflow: hidden; /* Asegura que la barra no se desborde */
+    position: relative; /* Para posicionar la barra interna */
+}
+
+/* Estilos para la barra de stock dentro de stock-display */
+.stock-bar-container {
+    width: 80px; /* Ancho fijo para la barra del minigráfico */
+    height: 18px; /* Altura de la barra */
+    background-color: var(--border-color); /* Fondo del track de la barra */
+    border-radius: 9px; /* Bordes redondeados */
+    overflow: hidden; /* Importante para que la barra de progreso no se salga */
+    position: relative;
+    margin-left: 10px; /* Espacio entre el texto "Stock: X" y la barra */
+}
+
+.stock-bar-fill {
+    height: 100%;
+    width: 0%; /* Se controlará con JS */
+    border-radius: 9px;
+    transition: width 0.5s ease-out, background-color 0.5s ease-out; /* Transición suave */
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Clases de colores para la barra de stock */
+.stock-high {
+    background-color: var(--stock-high-color);
+}
+
+.stock-medium {
+    background-color: var(--stock-medium-color);
+}
+
+.stock-low {
+    background-color: var(--stock-low-color);
+}
+
+/* --- Estilos para los Modales --- */
+.modal {
+    display: none; /* Oculto por defecto */
+    position: fixed; /* Posición fija en la pantalla */
+    z-index: 1000; /* Siempre encima de otros elementos */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Fondo semi-transparente oscuro */
+    justify-content: center; /* Centra el contenido horizontalmente */
+    align-items: center; /* Centra el contenido verticalmente */
+    backdrop-filter: blur(3px); /* Efecto de desenfoque en el fondo */
+}
+
+/* Estilos para el contenido de los modales */
+.modal-content {
+    background-color: var(--card-background);
+    margin: auto; /* Centra el modal */
+    padding: 25px; /* Reducido de 30px a 25px para hacerlo más compacto */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 90%; /* Ancho base */
+    max-width: 400px; /* Reducimos el ancho máximo para la mayoría de modales */
+    max-height: 90vh; /* Permite que el modal ocupe hasta el 90% de la altura de la ventana */
+    overflow-y: auto; /* Agrega una barra de desplazamiento vertical si el contenido excede la altura */
+    text-align: center;
+    position: relative;
+    box-sizing: border-box; /* Incluye padding y border en el tamaño total */
+}
+
+/* Modal más grande para el historial de transacciones */
+.modal-content.larger-modal-content {
+    max-width: 800px; /* Ancho para el historial de transacciones */
+}
+
+.modal-content h2 {
+    color: var(--primary-color);
+    margin-bottom: 25px;
+    font-size: 1.8em;
+}
+
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Espacio entre elementos del formulario */
+}
+
+.modal-content label {
+    text-align: left;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="password"],
+.modal-content input[type="number"],
+.modal-content select {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1em;
+    width: calc(100% - 24px); /* Ancho total menos padding */
+    box-sizing: border-box; /* Asegura que el padding no exceda el ancho */
+}
+
+/* Estilo para input type="file" */
+.modal-content input[type="file"] {
+    padding: 10px; /* Un poco menos de padding que los otros inputs */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1em;
+    width: calc(100% - 20px); /* Ajusta si el padding es diferente */
+    box-sizing: border-box;
+    background-color: var(--background-color); /* Un fondo para que se vea claro */
+    cursor: pointer;
+}
+
+.modal-content input[type="text"]:focus,
+.modal-content input[type="password"]:focus,
+.modal-content input[type="number"]:focus,
+.modal-content input[type="file"]:focus, /* Agregado */
+.modal-content select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.modal-btn,
+.modal-content button[type="submit"] {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-top: 20px; /* Espacio superior para los botones principales */
+    width: 100%;
+    font-weight: 600;
+}
+
+.modal-btn:hover,
+.modal-content button[type="submit"]:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+}
+
+.back-button {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-top: 10px; /* Espacio menor para el botón de atrás/cancelar */
+    width: 100%;
+    font-weight: 600;
+}
+
+.back-button:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+
+/* Estilos específicos para mensajes de error/éxito dentro de modales */
+.error-message {
+    color: var(--danger-color);
+    font-size: 0.9em;
+    margin-top: -8px; /* Reduce el espacio con el campo anterior */
+    margin-bottom: 8px;
+    text-align: center;
+    min-height: 18px; /* Mantiene el espacio incluso si no hay mensaje */
+    font-weight: 500;
+}
+
+.success-message {
+    color: var(--primary-color);
+    font-size: 0.9em;
+    margin-top: -8px;
+    margin-bottom: 8px;
+    text-align: center;
+    min-height: 18px;
+    font-weight: 500;
+}
+
+/* Mensajes de advertencia (nuevo) */
+.warning-message {
+    color: orange; /* Color para advertencias */
+    font-size: 0.9em;
+    margin-top: -8px;
+    margin-bottom: 8px;
+    text-align: center;
+    min-height: 18px;
+    font-weight: 500;
+}
+
+/* Estilos para el modal de carga (barra de progreso) */
+.progress-content {
+    background-color: var(--card-background);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    max-width: 350px; /* Más pequeño para la barra de progreso */
+    text-align: center;
+}
+
+.progress-bar-container {
+    width: 100%;
+    background-color: var(--border-color);
+    border-radius: 5px;
+    margin: 20px 0;
+    height: 20px;
+    overflow: hidden; /* Asegura que la barra no se salga del contenedor */
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background-color: var(--primary-color);
+    border-radius: 5px;
+    text-align: center;
+    line-height: 20px;
+    color: white;
+    font-weight: bold;
+    transition: width 0.1s linear; /* Transición suave del progreso */
+}
+
+.progress-content p {
+    font-size: 1em;
+    color: var(--secondary-color);
+    margin-top: 15px;
+}
+
+
+/* Estilos para el modal de detalles del producto */
+.details-product-img {
+    max-width: 200px; /* Tamaño más grande para la imagen en detalles */
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.productDetailsModal p {
+    font-size: 1.15em;
+    margin: 8px 0;
+}
+
+.productDetailsModal span {
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+.button-container-horizontal {
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Espacio entre los botones de COMPRAR y VENDER */
+    margin-top: 25px;
+    flex-wrap: wrap; /* Permite que los botones se envuelvan */
+}
+
+.button-container-horizontal .action-btn {
+    width: auto; /* Permite que el botón se ajuste a su contenido */
+    padding: 10px 20px; /* Padding ajustado */
+    font-size: 0.95em;
+    margin: 0; /* Elimina márgenes extra */
+}
+
+/* Estilos para los select (dropdowns) en los modales */
+.select-dropdown {
+    width: 100%; /* Asegura que ocupe el ancho completo */
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1em;
+    background-color: white; /* Fondo blanco para el dropdown */
+    appearance: none; /* Elimina estilos predeterminados del navegador */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236c757d%22%20d%3D%22M287%2C197.973L146.2%2C57.173L5.4%2C197.973H287z%22%2F%3E%3C%2Fsvg%3E'); /* Flecha personalizada */
+    background-repeat: no-repeat;
+    background-position: right 10px top 50%;
+    background-size: 12px;
+    cursor: pointer;
+}
+
+.select-dropdown:hover {
+    border-color: var(--primary-color);
+}
+
+/* Estilos de la tabla de transacciones */
+.transactions-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.transactions-filter-bar .filter-input {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 0.9em;
+    flex: 1 1 auto; /* Permite que los inputs crezcan y se envuelvan */
+    min-width: 120px; /* Ancho mínimo para cada filtro */
+}
+
+.transactions-filter-bar .action-btn {
+    padding: 8px 15px;
+    font-size: 0.9em;
+    margin: 0;
+}
+
+
+.transactions-table-container {
+    max-height: 400px; /* Altura máxima para la tabla con scroll */
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+#transactionsTable {
+    width: 100%;
+    border-collapse: collapse; /* Elimina espacios entre celdas */
+    font-size: 0.9em;
+    white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
+}
+
+#transactionsTable th, #transactionsTable td {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+#transactionsTable th {
+    background-color: #f2f2f2;
+    font-weight: 600;
+    color: var(--text-color);
+    position: sticky; /* Encabezados pegajosos */
+    top: 0;
+    z-index: 1; /* Asegura que estén sobre el contenido */
+}
+
+#transactionsTable tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#transactionsTable tbody tr:hover {
+    background-color: #f0f0f0;
+}
+
+.transaction-type-buy {
+    color: var(--primary-color); /* Verde para compras */
+    font-weight: bold;
+}
+
+.transaction-type-sell {
+    color: var(--danger-color); /* Rojo para ventas */
+    font-weight: bold;
+}
+
+.no-data-message {
+    text-align: center;
+    color: var(--secondary-color);
+    margin: 20px 0;
+    font-style: italic;
+}
+
+
+/* Paginación */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.pagination-controls .action-btn {
+    padding: 8px 15px;
+    font-size: 0.9em;
+    margin: 0;
+}
+
+#pageInfo {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+/* Estilos para Toast Notifications */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 2000; /* Asegura que esté por encima de todo */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none; /* Permite hacer clic a través del contenedor si está vacío */
+}
+
+.toast {
+    background-color: rgba(52, 58, 64, 0.9); /* Fondo oscuro semitransparente */
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    font-size: 1em;
+    min-width: 250px;
+    max-width: 350px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0; /* Inicialmente oculto */
+    transform: translateX(100%); /* Sale desde la derecha */
+    animation: slideIn 0.5s forwards, fadeOut 0.5s forwards 2.5s; /* Entra, permanece, sale */
+    pointer-events: all; /* Hace el toast clickeable */
+}
+
+.toast.success {
+    background-color: rgba(40, 167, 69, 0.9);
+}
+
+.toast.error {
+    background-color: rgba(220, 53, 69, 0.9);
+}
+
+.toast.warning {
+    background-color: rgba(255, 193, 7, 0.9);
+}
+
+.toast i {
+    font-size: 1.2em;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; transform: translateX(100%); }
+}
+
+
+/* Media Queries para responsividad */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 1.8em;
+    }
+
+    .summary-dashboard {
+        grid-template-columns: 1fr; /* Una columna en móviles */
+    }
+
+    .dashboard-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .action-btn {
+        width: 100%;
+        padding: 10px 15px;
+    }
+
+    .products-container {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 15px;
+    }
+
+    .product-card {
+        padding: 15px;
+    }
+
+    .product-card img {
+        height: 120px;
+    }
+
+    .product-card h3 {
+        font-size: 1.1em;
+    }
+
+    .product-card p {
+        font-size: 1em;
+    }
+
+    .modal-content {
+        padding: 20px;
+        max-width: 350px; /* Un poco más pequeño en pantallas pequeñas */
+    }
+
+    .modal-content.larger-modal-content {
+        max-width: 90%; /* Ajuste para el modal de transacciones */
+    }
+
+    .modal-content h2 {
+        font-size: 1.5em;
+        margin-bottom: 20px;
+    }
+
+    .modal-content input,
+    .modal-content select,
+    .modal-content input[type="file"], /* Agregado */
+    .modal-btn,
+    .modal-content button[type="submit"],
+    .back-button {
+        padding: 10px;
+        font-size: 1em;
+    }
+
+    .button-container-horizontal {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .button-container-horizontal .action-btn {
+        width: 100%;
+    }
+
+    .transactions-filter-bar {
+        flex-direction: column;
+    }
+
+    #transactionsTable th, #transactionsTable td {
+        padding: 8px 10px;
+    }
+    #transactionsTable {
+        font-size: 0.8em;
+    }
+
+    .toast {
+        min-width: unset;
+        width: calc(100% - 40px);
+        left: 20px;
+        right: 20px;
+        bottom: 10px;
+    }
+
+    .chart-container-wrapper {
+        padding: 15px;
+    }
+    .bar-chart-item {
+        flex-direction: column;
+        align-items: flex-start;
+        height: auto;
+    }
+    .bar-label {
+        width: 100%;
+        text-align: left;
+    }
+    .bar-graph {
+        width: 100%;
+    }
+    .bar-value {
+        position: static; /* Coloca el valor debajo de la barra */
+        color: var(--text-color);
+        font-weight: normal;
+        text-shadow: none;
+        margin-top: 5px;
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.5em;
+    }
+
+    main {
+        padding: 15px;
+    }
+
+    .search-input {
+        padding: 10px 10px 10px 35px;
+        font-size: 0.9em;
+    }
+
+    .search-icon {
+        left: 10px;
+        font-size: 0.9em;
+    }
+
+    .products-container {
+        grid-template-columns: 1fr; /* Una columna en pantallas muy pequeñas */
+    }
+
+    .modal-content {
+        padding: 15px;
+        max-width: 95%; /* Casi todo el ancho disponible */
+    }
+
+    .modal-content h2 {
+        font-size: 1.3em;
+    }
+}
+	</style>
+    
+</head>
+<body>
+    <header>
+        <h1>Gestión de Inventario</h1>
+    </header>
+
+    <main>
+        <div id="mainContentText" class="initial-text">
+            <p>Bienvenido. Por favor, inicie sesión o cree una nueva cuenta para empezar a gestionar su inventario.</p>
+        </div>
+
+        <div id="dashboardContent" class="dashboard-content">
+            <div class="dashboard-actions">
+                <button id="addProductBtn" class="action-btn primary-btn"><i class="fas fa-plus-circle"></i> AGREGAR PRODUCTO</button>
+                <button id="deleteProductBtn" class="action-btn danger-btn"><i class="fas fa-trash-alt"></i> ELIMINAR PRODUCTO</button>
+                <button id="viewTransactionsBtn" class="action-btn secondary-btn"><i class="fas fa-history"></i> VER TRANSACCIONES</button>
+            </div>
+
+            <div class="summary-dashboard">
+                <div class="summary-card">
+                    <h3>Total Productos</h3>
+                    <p id="totalProductsCount">0</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Valor Inventario</h3>
+                    <p id="totalInventoryValue">S/ 0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Ventas Hoy</h3>
+                    <p id="salesTodayCount">0</p>
+                </div>
+            </div>
+
+            <div class="chart-container-wrapper">
+                <h3>Top 5 Productos Más Vendidos</h3>
+                <div id="topSellingProductsChart" class="chart-container">
+                    <p id="noSalesDataMessage" class="no-data-message">No hay datos de ventas para mostrar.</p>
+                </div>
+            </div>
+
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="productSearch" class="search-input" placeholder="Buscar producto por nombre...">
+            </div>
+            
+            <p id="dashboardMessage" class="dashboard-message"></p>
+
+            <div id="productsContainer" class="products-container">
+                </div>
+
+            <div class="pagination-controls">
+                <button id="prevPageBtn" class="action-btn secondary-btn"><i class="fas fa-chevron-left"></i> Anterior</button>
+                <span id="pageInfo">Página 1 de 1</span>
+                <button id="nextPageBtn" class="action-btn secondary-btn">Siguiente <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </main>
+
+    <div id="initialModal" class="modal">
+        <div class="modal-content">
+            <h2>Bienvenido</h2>
+            <button id="showLoginBtn" class="modal-btn primary-btn"><i class="fas fa-sign-in-alt"></i> INICIAR SESIÓN</button>
+            <button id="showCreateSessionBtn" class="modal-btn secondary-btn" style="margin-top: 15px;"><i class="fas fa-user-plus"></i> CREAR CUENTA</button>
+        </div>
+    </div>
+
+    <div id="createSessionModal" class="modal">
+        <div class="modal-content">
+            <h2>Crear Nueva Cuenta</h2>
+            <form id="createSessionForm">
+                <label for="newUsername">Usuario:</label>
+                <input type="text" id="newUsername" placeholder="Ingrese su usuario" required>
+                <label for="newPassword">Contraseña:</label>
+                <input type="password" id="newPassword" placeholder="Ingrese su contraseña" required>
+                <p id="createSessionError" class="error-message"></p>
+                <button type="submit" class="primary-btn"><i class="fas fa-user-check"></i> REGISTRARSE</button>
+                <button type="button" id="backFromCreate" class="back-button"><i class="fas fa-arrow-left"></i> ATRÁS</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>Iniciar Sesión</h2>
+            <form id="loginForm">
+                <label for="username">Usuario:</label>
+                <input type="text" id="username" placeholder="Ingrese su usuario" required>
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" placeholder="Ingrese su contraseña" required>
+                <p id="loginError" class="error-message"></p>
+                <button type="submit" class="primary-btn"><i class="fas fa-sign-in-alt"></i> ACCEDER</button>
+                <button type="button" id="backFromLogin" class="back-button"><i class="fas fa-arrow-left"></i> ATRÁS</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="progressBarModal" class="modal">
+        <div class="modal-content progress-content">
+            <h2>Cargando Dashboard...</h2>
+            <div class="progress-bar-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <p id="progressText">Un momento por favor...</p>
+        </div>
+    </div>
+
+    <div id="addProductModal" class="modal">
+        <div class="modal-content">
+            <h2 id="addProductModalTitle">Agregar Nuevo Producto</h2>
+            <form id="addProductForm">
+                <input type="hidden" id="productIdToEdit"> <label for="productName">Nombre del Producto:</label>
+                <input type="text" id="productName" placeholder="Ej: Zapatillas Deportivas" required>
+                
+                <label for="productImageFile">Imagen del Producto:</label>
+                <input type="file" id="productImageFile" accept="image/*"> <label for="productPrice">Precio Unitario (S/):</label>
+                <input type="number" id="productPrice" step="0.01" min="0" placeholder="Ej: 99.99" required>
+                <p id="addProductError" class="error-message"></p>
+                <button type="submit" id="saveProductBtn" class="primary-btn"><i class="fas fa-save"></i> GUARDAR PRODUCTO</button>
+                <button type="button" id="closeAddProductModalBtn" class="back-button"><i class="fas fa-times-circle"></i> CANCELAR</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="productDetailsModal" class="modal">
+        <div class="modal-content">
+            <h2 id="detailsProductName">Nombre del Producto</h2>
+            <img id="detailsProductImage" src="https://via.placeholder.com/200?text=Producto" alt="Imagen del Producto" class="details-product-img">
+            <p>Precio: <span id="detailsProductPrice">S/ 0.00</span></p>
+            <p>Stock Disponible: <span id="detailsProductStock">0</span></p>
+            <div class="button-container-horizontal">
+                <button id="buyProductBtn" class="action-btn primary-btn"><i class="fas fa-cash-register"></i> COMPRAR</button>
+                <button id="sellProductBtn" class="action-btn danger-btn"><i class="fas fa-hand-holding-usd"></i> VENDER</button>
+                <button id="editProductBtn" class="action-btn accent-btn"><i class="fas fa-edit"></i> EDITAR</button>
+            </div>
+            <button type="button" id="closeDetailsModalBtn" class="back-button" style="margin-top: 15px;"><i class="fas fa-arrow-left"></i> ATRÁS</button>
+        </div>
+    </div>
+
+    <div id="buyTransactionModal" class="modal">
+        <div class="modal-content">
+            <h2>Registrar Compra</h2>
+            <form id="buyTransactionForm">
+                <label for="buyProductName">Producto:</label>
+                <select id="buyProductName" class="select-dropdown" required>
+                    </select>
+
+                <label for="buyQuantity">Cantidad:</label>
+                <input type="number" id="buyQuantity" min="1" placeholder="Ingrese cantidad" required>
+
+                <label for="buyUnitPrice">Precio Unitario de Compra (S/):</label>
+                <input type="number" id="buyUnitPrice" step="0.01" min="0" placeholder="Ingrese precio" required>
+
+                <label for="buyTotalPrice">Precio Total (S/):</label>
+                <input type="text" id="buyTotalPrice" value="0.00" readonly>
+                <p id="buyTransactionError" class="error-message"></p>
+                <button type="submit" class="primary-btn"><i class="fas fa-plus-square"></i> CONFIRMAR COMPRA</button>
+                <button type="button" id="cancelBuyTransactionBtn" class="back-button"><i class="fas fa-times-circle"></i> CANCELAR</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="sellTransactionModal" class="modal">
+        <div class="modal-content">
+            <h2>Registrar Venta</h2>
+            <form id="sellTransactionForm">
+                <label for="sellProductName">Producto:</label>
+                <select id="sellProductName" class="select-dropdown" required>
+                    </select>
+
+                <label for="sellQuantity">Cantidad:</label>
+                <input type="number" id="sellQuantity" min="1" placeholder="Ingrese cantidad" required>
+
+                <label for="sellUnitPrice">Precio Unitario de Venta (S/):</label>
+                <input type="number" id="sellUnitPrice" step="0.01" min="0" placeholder="Ingrese precio" required>
+
+                <label for="sellTotalPrice">Precio Total (S/):</label>
+                <input type="text" id="sellTotalPrice" value="0.00" readonly>
+                <p id="sellStockWarning" class="warning-message"></p>
+                <p id="sellTransactionError" class="error-message"></p>
+                <button type="submit" class="danger-btn"><i class="fas fa-minus-square"></i> CONFIRMAR VENTA</button>
+                <button type="button" id="closeSellTransactionBtn" class="back-button"><i class="fas fa-times-circle"></i> CANCELAR</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="transactionsHistoryModal" class="modal">
+        <div class="modal-content larger-modal-content">
+            <h2>Historial de Transacciones</h2>
+
+            <div class="transactions-filter-bar">
+                <input type="date" id="transactionDateFilter" class="filter-input" title="Filtrar por fecha">
+                <select id="transactionTypeFilter" class="filter-input">
+                    <option value="">Todo Tipo</option>
+                    <option value="buy">Compra</option>
+                    <option value="sell">Venta</option>
+                </select>
+                <input type="text" id="transactionProductSearch" class="filter-input" placeholder="Buscar por producto...">
+                <button id="resetTransactionFilters" class="action-btn secondary-btn"><i class="fas fa-sync-alt"></i> Limpiar Filtros</button>
+            </div>
+
+            <div class="transactions-table-container">
+                <table id="transactionsTable">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unit.</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody">
+                        </tbody>
+                </table>
+                <p id="noTransactionsMessage" class="no-data-message" style="display: none;">No hay transacciones registradas.</p>
+            </div>
+
+            <button type="button" id="closeTransactionsHistoryBtn" class="back-button"><i class="fas fa-arrow-left"></i> CERRAR</button>
+        </div>
+    </div>
+
+    <div id="toastContainer"></div>
+
+    <script>
+	document.addEventListener('DOMContentLoaded', () => {
+    // --- Referencias a elementos del DOM ---
+    const initialModal = document.getElementById('initialModal');
+    const createSessionModal = document.getElementById('createSessionModal');
+    const loginModal = document.getElementById('loginModal');
+    const progressBarModal = document.getElementById('progressBarModal');
+    const addProductModal = document.getElementById('addProductModal');
+    const productDetailsModal = document.getElementById('productDetailsModal');
+    const buyTransactionModal = document.getElementById('buyTransactionModal');
+    const sellTransactionModal = document.getElementById('sellTransactionModal');
+    const transactionsHistoryModal = document.getElementById('transactionsHistoryModal');
+
+    const showLoginBtn = document.getElementById('showLoginBtn');
+    const showCreateSessionBtn = document.getElementById('showCreateSessionBtn');
+
+    const createSessionForm = document.getElementById('createSessionForm');
+    const loginForm = document.getElementById('loginForm');
+    const addProductForm = document.getElementById('addProductForm');
+    const buyTransactionForm = document.getElementById('buyTransactionForm');
+    const sellTransactionForm = document.getElementById('sellTransactionForm');
+
+    const backFromCreateBtn = document.getElementById('backFromCreate');
+    const backFromLoginBtn = document.getElementById('backFromLogin');
+    const closeAddProductModalBtn = document.getElementById('closeAddProductModalBtn');
+    const closeDetailsModalBtn = document.getElementById('closeDetailsModalBtn');
+    const buyProductBtn = document.getElementById('buyProductBtn');
+    const sellProductBtn = document.getElementById('sellProductBtn');
+    const editProductBtn = document.getElementById('editProductBtn');
+    const cancelBuyTransactionBtn = document.getElementById('cancelBuyTransactionBtn');
+    const closeSellTransactionBtn = document.getElementById('closeSellTransactionBtn');
+    const viewTransactionsBtn = document.getElementById('viewTransactionsBtn');
+    const closeTransactionsHistoryBtn = document.getElementById('closeTransactionsHistoryBtn');
+
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const mainContentText = document.getElementById('mainContentText');
+    const dashboardContent = document.getElementById('dashboardContent');
+
+    const addProductBtn = document.getElementById('addProductBtn');
+    const deleteProductBtn = document.getElementById('deleteProductBtn');
+    const productSearch = document.getElementById('productSearch');
+    const productsContainer = document.getElementById('productsContainer');
+    const dashboardMessage = document.getElementById('dashboardMessage');
+
+    const createSessionError = document.getElementById('createSessionError');
+    const loginError = document.getElementById('loginError');
+    const addProductError = document.getElementById('addProductError');
+    const buyTransactionError = document.getElementById('buyTransactionError');
+    const sellTransactionError = document.getElementById('sellTransactionError');
+    const sellStockWarning = document.getElementById('sellStockWarning');
+
+    // Elementos del modal de detalles de producto
+    const detailsProductName = document.getElementById('detailsProductName');
+    const detailsProductImage = document.getElementById('detailsProductImage');
+    const detailsProductPrice = document.getElementById('detailsProductPrice');
+    const detailsProductStock = document.getElementById('detailsProductStock');
+
+    // Elementos del modal de compra
+    const buyProductNameSelect = document.getElementById('buyProductName');
+    const buyQuantityInput = document.getElementById('buyQuantity');
+    const buyUnitPriceInput = document.getElementById('buyUnitPrice');
+    const buyTotalPriceInput = document.getElementById('buyTotalPrice');
+
+    // Elementos del modal de venta
+    const sellProductNameSelect = document.getElementById('sellProductName');
+    const sellQuantityInput = document.getElementById('sellQuantity');
+    const sellUnitPriceInput = document.getElementById('sellUnitPrice');
+    const sellTotalPriceInput = document.getElementById('sellTotalPrice');
+
+    // Elementos del modal de Add/Edit Product
+    const addProductModalTitle = document.getElementById('addProductModalTitle');
+    const productIdToEdit = document.getElementById('productIdToEdit');
+    const productNameInput = document.getElementById('productName'); // Renombrado para consistencia
+    const productImageFile = document.getElementById('productImageFile'); // NUEVO: input tipo file
+    const productPriceInput = document.getElementById('productPrice'); // Renombrado para consistencia
+    const saveProductBtn = document.getElementById('saveProductBtn');
+
+    // Elementos del Dashboard Resumen
+    const totalProductsCount = document.getElementById('totalProductsCount');
+    const totalInventoryValue = document.getElementById('totalInventoryValue');
+    const salesTodayCount = document.getElementById('salesTodayCount');
+
+    // Elementos del Historial de Transacciones
+    const transactionsTableBody = document.getElementById('transactionsTableBody');
+    const transactionDateFilter = document.getElementById('transactionDateFilter');
+    const transactionTypeFilter = document.getElementById('transactionTypeFilter');
+    const transactionProductSearch = document.getElementById('transactionProductSearch');
+    const resetTransactionFiltersBtn = document.getElementById('resetTransactionFilters');
+    const noTransactionsMessage = document.getElementById('noTransactionsMessage');
+
+    // Elementos de Paginación
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const pageInfo = document.getElementById('pageInfo');
+    const PRODUCTS_PER_PAGE = 8;
+    let currentPage = 1;
+    let filteredProducts = [];
+
+    // Elementos de Gráficos
+    const topSellingProductsChart = document.getElementById('topSellingProductsChart');
+    const noSalesDataMessage = document.getElementById('noSalesDataMessage');
+
+    // Toast Container
+    const toastContainer = document.getElementById('toastContainer');
+
+    let selectedProductId = null;
+    let productInDetails = null; // Para almacenar el producto seleccionado en el modal de detalles
+
+    // --- Constantes de Stock ---
+    const MIN_STOCK_ALERT = 5;
+    const CRITICAL_STOCK_ALERT = 0;
+    const MAX_STOCK_CAPACITY = 50;
+
+    // --- Funciones Auxiliares para Modales y Mensajes ---
+
+    function showModal(modal) {
+        modal.style.display = 'flex';
+    }
+
+    function hideModal(modal) {
+        modal.style.display = 'none';
+    }
+
+    function clearErrorMessages() {
+        createSessionError.textContent = '';
+        loginError.textContent = '';
+        addProductError.textContent = '';
+        buyTransactionError.textContent = '';
+        sellTransactionError.textContent = '';
+        sellStockWarning.textContent = '';
+        dashboardMessage.textContent = '';
+    }
+
+    /**
+     * Muestra una notificación toast.
+     * @param {string} message - El mensaje a mostrar.
+     * @param {string} type - El tipo de toast ('success', 'error', 'warning', 'info').
+     */
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.classList.add('toast', type);
+        let icon = '';
+        switch (type) {
+            case 'success':
+                icon = '<i class="fas fa-check-circle"></i>';
+                break;
+            case 'error':
+                icon = '<i class="fas fa-times-circle"></i>';
+                break;
+            case 'warning':
+                icon = '<i class="fas fa-exclamation-triangle"></i>';
+                break;
+            case 'info':
+            default:
+                icon = '<i class="fas fa-info-circle"></i>';
+                break;
+        }
+        toast.innerHTML = `${icon} <span>${message}</span>`;
+        toastContainer.appendChild(toast);
+
+        // Remover toast después de la animación de salida
+        toast.addEventListener('animationend', (e) => {
+            if (e.animationName === 'fadeOut') {
+                toast.remove();
+            }
+        });
+    }
+
+    // Función para cerrar y limpiar el modal de venta
+    function closeSellModal() {
+        clearErrorMessages();
+        sellTransactionForm.reset();
+        hideModal(sellTransactionModal);
+        productInDetails = null;
+        sellQuantityInput.disabled = true;
+        sellUnitPriceInput.disabled = true;
+        sellTotalPriceInput.value = '0.00'; // Asegurar que el total se resetee
+    }
+
+    // Función para cerrar y limpiar el modal de compra
+    function closeBuyModal() {
+        clearErrorMessages();
+        buyTransactionForm.reset();
+        hideModal(buyTransactionModal);
+        productInDetails = null;
+        buyQuantityInput.disabled = true;
+        buyUnitPriceInput.disabled = true;
+        buyTotalPriceInput.value = '0.00'; // Asegurar que el total se resetee
+    }
+
+    // Función para cerrar y limpiar el modal de añadir/editar producto
+    function closeAddProductModal() {
+        clearErrorMessages();
+        addProductForm.reset();
+        hideModal(addProductModal);
+        productIdToEdit.value = ''; // Limpiar el ID de edición
+        addProductModalTitle.textContent = 'Agregar Nuevo Producto'; // Resetear título
+        saveProductBtn.textContent = 'GUARDAR PRODUCTO'; // Resetear texto del botón
+        productImageFile.value = ''; // Limpiar el input file
+    }
+
+    // --- Gestión de la Vista del Dashboard ---
+
+    function showDashboard(username) {
+        mainContentText.style.display = 'none';
+        dashboardContent.style.display = 'block';
+        productSearch.value = '';
+        currentPage = 1; // Reiniciar paginación al mostrar dashboard
+        renderProducts();
+        updateSummaryDashboard(); // Actualizar resumen
+        renderTopSellingProductsChart(); // Renderizar gráfico
+        selectedProductId = null;
+        clearErrorMessages();
+    }
+
+    function hideDashboard() {
+        mainContentText.style.display = 'block';
+        dashboardContent.style.display = 'none';
+        productsContainer.innerHTML = '';
+        selectedProductId = null;
+    }
+
+    // --- Simulación de Barra de Progreso ---
+
+    function simulateProgressBarAndRedirect(username) {
+        showModal(progressBarModal);
+        let width = 0;
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
+        progressText.textContent = 'Un momento por favor...';
+
+        const interval = setInterval(() => {
+            if (width >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    hideModal(progressBarModal);
+                    showDashboard(username);
+                }, 300);
+            } else {
+                width += 10;
+                progressBar.style.width = width + '%';
+                progressBar.textContent = width + '%';
+            }
+        }, 120);
+    }
+
+    // --- Gestión de Usuarios (localStorage) ---
+
+    function getUsers() {
+        const usersJSON = localStorage.getItem('users');
+        return usersJSON ? JSON.parse(usersJSON) : {};
+    }
+
+    function saveUsers(users) {
+        localStorage.setItem('users', JSON.stringify(users));
+    }
+
+    // --- Gestión de Productos (localStorage y Renderizado) ---
+
+    function getProducts() {
+        const productsJSON = localStorage.getItem('products');
+        let products = productsJSON ? JSON.parse(productsJSON) : [];
+        products.forEach(p => {
+            if (typeof p.stock === 'undefined') {
+                p.stock = 0;
+            }
+        });
+        return products;
+    }
+
+    function saveProducts(products) {
+        localStorage.setItem('products', JSON.stringify(products));
+        renderProducts(); // Vuelve a renderizar los productos cada vez que se guardan
+        updateSummaryDashboard(); // Actualizar resumen al guardar productos
+    }
+
+    // --- Gestión de Transacciones (localStorage) ---
+
+    function getTransactions() {
+        const transactionsJSON = localStorage.getItem('transactions');
+        return transactionsJSON ? JSON.parse(transactionsJSON) : [];
+    }
+
+    function saveTransaction(transaction) {
+        const transactions = getTransactions();
+        transactions.push(transaction);
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+    }
+
+    function renderProducts() {
+        productsContainer.innerHTML = '';
+        const allProducts = getProducts();
+        const searchTerm = productSearch.value.toLowerCase().trim();
+
+        filteredProducts = allProducts.filter(product =>
+            product.name.toLowerCase().includes(searchTerm)
+        );
+
+        const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
+        if (currentPage > totalPages && totalPages > 0) {
+            currentPage = totalPages;
+        } else if (totalPages === 0) {
+            currentPage = 0;
+        } else if (currentPage === 0 && totalPages > 0) {
+            currentPage = 1;
+        }
+
+        const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+        const endIndex = startIndex + PRODUCTS_PER_PAGE;
+        const productsToDisplay = filteredProducts.slice(startIndex, endIndex);
+
+        updatePaginationControls(totalPages);
+
+        if (productsToDisplay.length === 0) {
+            productsContainer.innerHTML = `<p style="text-align: center; width: 100%; color: var(--secondary-color);">
+                                               ${searchTerm ? 'No se encontraron productos con ese nombre.' : 'Aún no hay productos. ¡Agrega el primero!'}
+                                           </p>`;
+            return;
+        }
+
+        productsToDisplay.forEach(product => {
+            const productCard = document.createElement('div');
+            productCard.classList.add('product-card');
+            productCard.dataset.productId = product.id;
+
+            if (selectedProductId === product.id) {
+                productCard.classList.add('selected');
+            }
+
+            productCard.addEventListener('click', (event) => {
+                if (!event.target.closest('.action-btn')) {
+                    document.querySelectorAll('.product-card.selected').forEach(card => {
+                        card.classList.remove('selected');
+                    });
+
+                    if (selectedProductId === product.id) {
+                        selectedProductId = null;
+                        productCard.classList.remove('selected');
+                    } else {
+                        selectedProductId = product.id;
+                        productCard.classList.add('selected');
+                    }
+                    showProductDetails(product);
+                }
+            });
+
+            const img = document.createElement('img');
+            img.src = product.imageUrl;
+            img.alt = product.name;
+            img.onerror = () => { img.src = 'https://via.placeholder.com/150?text=No+Image'; };
+
+            const name = document.createElement('h3');
+            name.textContent = product.name;
+
+            const price = document.createElement('p');
+            price.textContent = `S/ ${parseFloat(product.price).toFixed(2)}`;
+
+            const stockDisplay = document.createElement('span');
+            stockDisplay.classList.add('stock-display');
+
+            const stockText = document.createElement('span');
+            stockText.textContent = `Stock: ${product.stock}`;
+            stockDisplay.appendChild(stockText);
+
+            const stockBarContainer = document.createElement('div');
+            stockBarContainer.classList.add('stock-bar-container');
+
+            const stockBarFill = document.createElement('div');
+            stockBarFill.classList.add('stock-bar-fill');
+
+            let stockPercentage = (product.stock / MAX_STOCK_CAPACITY) * 100;
+            if (stockPercentage > 100) stockPercentage = 100;
+            if (stockPercentage < 0) stockPercentage = 0;
+
+            stockBarFill.style.width = `${stockPercentage}%`;
+
+            if (product.stock > MIN_STOCK_ALERT) {
+                stockBarFill.classList.add('stock-high');
+            } else if (product.stock > CRITICAL_STOCK_ALERT) {
+                stockBarFill.classList.add('stock-medium');
+            } else {
+                stockBarFill.classList.add('stock-low');
+            }
+
+            stockBarContainer.appendChild(stockBarFill);
+            stockDisplay.appendChild(stockBarContainer);
+
+            productCard.appendChild(img);
+            productCard.appendChild(name);
+            productCard.appendChild(price);
+            productCard.appendChild(stockDisplay);
+
+            productsContainer.appendChild(productCard);
+        });
+    }
+
+    function updatePaginationControls(totalPages) {
+        pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+        prevPageBtn.disabled = currentPage === 1 || totalPages === 0;
+        nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+    }
+
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderProducts();
+        }
+    });
+
+    nextPageBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderProducts();
+        }
+    });
+
+    // --- Funciones para Modales de Detalles y Transacciones ---
+
+    function showProductDetails(product) {
+        productInDetails = product;
+        detailsProductName.textContent = product.name;
+        detailsProductImage.src = product.imageUrl;
+        detailsProductImage.alt = product.name;
+        detailsProductPrice.textContent = `S/ ${parseFloat(product.price).toFixed(2)}`;
+        detailsProductStock.textContent = product.stock;
+        showModal(productDetailsModal);
+    }
+
+    function populateProductDropdown(dropdownElement) {
+        dropdownElement.innerHTML = '<option value="">-- Seleccione un producto --</option>';
+        const products = getProducts();
+        products.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product.id;
+            option.textContent = product.name;
+            dropdownElement.appendChild(option);
+        });
+    }
+
+    function calculateTotalPrice(quantityInput, unitPriceInput, totalPriceOutput) {
+        const quantity = parseFloat(quantityInput.value);
+        const unitPrice = parseFloat(unitPriceInput.value);
+
+        if (!isNaN(quantity) && quantity >= 0 && !isNaN(unitPrice) && unitPrice >= 0) {
+            totalPriceOutput.value = (quantity * unitPrice).toFixed(2);
+        } else {
+            totalPriceOutput.value = '0.00';
+        }
+    }
+
+    // --- Dashboard de Resumen ---
+    function updateSummaryDashboard() {
+        const products = getProducts();
+        const transactions = getTransactions();
+        const today = new Date().toISOString().slice(0, 10); // Formato YYYY-MM-DD
+
+        // Total de Productos
+        totalProductsCount.textContent = products.length;
+
+        // Valor Total del Inventario
+        const inventoryValue = products.reduce((sum, p) => sum + (p.stock * p.price), 0);
+        totalInventoryValue.textContent = `S/ ${inventoryValue.toFixed(2)}`;
+
+        // Ventas de Hoy
+        const salesToday = transactions.filter(t => t.type === 'sell' && t.date.slice(0, 10) === today);
+        const totalSalesToday = salesToday.reduce((sum, t) => sum + t.quantity, 0);
+        salesTodayCount.textContent = totalSalesToday;
+
+        renderTopSellingProductsChart(); // Actualizar gráfico al actualizar resumen
+    }
+
+    // --- Gráfico de Productos Más Vendidos ---
+    function renderTopSellingProductsChart() {
+        const transactions = getTransactions();
+        const products = getProducts();
+
+        const productSales = {}; // {productId: totalUnitsSold}
+
+        // Calcular ventas por producto
+        transactions.filter(t => t.type === 'sell').forEach(t => {
+            if (productSales[t.productId]) {
+                productSales[t.productId] += t.quantity;
+            } else {
+                productSales[t.productId] = t.quantity;
+            }
+        });
+
+        // Convertir a array y ordenar
+        const sortedSales = Object.entries(productSales)
+            .map(([productId, quantity]) => {
+                const product = products.find(p => p.id == productId);
+                return {
+                    name: product ? product.name : 'Producto Desconocido',
+                    quantity: quantity
+                };
+            })
+            .sort((a, b) => b.quantity - a.quantity)
+            .slice(0, 5); // Tomar solo el top 5
+
+        topSellingProductsChart.innerHTML = ''; // Limpiar gráfico anterior
+        if (sortedSales.length === 0) {
+            noSalesDataMessage.style.display = 'block';
+            topSellingProductsChart.appendChild(noSalesDataMessage);
+            return;
+        } else {
+            noSalesDataMessage.style.display = 'none';
+        }
+
+        const maxQuantity = Math.max(...sortedSales.map(item => item.quantity));
+
+        sortedSales.forEach(item => {
+            const barItem = document.createElement('div');
+            barItem.classList.add('bar-chart-item');
+
+            const label = document.createElement('div');
+            label.classList.add('bar-label');
+            label.textContent = item.name;
+
+            const barGraph = document.createElement('div');
+            barGraph.classList.add('bar-graph');
+
+            const barFill = document.createElement('div');
+            barFill.classList.add('bar-fill');
+            const widthPercentage = maxQuantity > 0 ? (item.quantity / maxQuantity) * 100 : 0;
+            barFill.style.width = `${widthPercentage}%`;
+
+            const valueSpan = document.createElement('span');
+            valueSpan.classList.add('bar-value');
+            valueSpan.textContent = item.quantity;
+
+            barFill.appendChild(valueSpan);
+            barGraph.appendChild(barFill);
+
+            barItem.appendChild(label);
+            barItem.appendChild(barGraph);
+
+            topSellingProductsChart.appendChild(barItem);
+        });
+    }
+
+    // --- Event Listeners Principales (Inicialización y Login) ---
+
+    // Mostrar el modal inicial al cargar la página
+    showModal(initialModal);
+
+    // Event listeners para botones de login/crear sesión/atrás
+    showLoginBtn.addEventListener('click', () => {
+        clearErrorMessages();
+        hideModal(initialModal);
+        showModal(loginModal);
+        loginForm.reset();
+        document.getElementById('username').focus();
+    });
+
+    showCreateSessionBtn.addEventListener('click', () => {
+        clearErrorMessages();
+        hideModal(initialModal);
+        showModal(createSessionModal);
+        createSessionForm.reset();
+        document.getElementById('newUsername').focus();
+    });
+
+    backFromCreateBtn.addEventListener('click', () => {
+        clearErrorMessages();
+        hideModal(createSessionModal);
+        showModal(initialModal);
+        createSessionForm.reset();
+    });
+
+    backFromLoginBtn.addEventListener('click', () => {
+        clearErrorMessages();
+        hideModal(loginModal);
+        showModal(initialModal);
+        loginForm.reset();
+        hideDashboard();
+    });
+
+    // Formulario de Crear Sesión
+    createSessionForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const newUsername = document.getElementById('newUsername').value.trim();
+        const newPassword = document.getElementById('newPassword').value.trim();
+
+        if (!newUsername || !newPassword) {
+            showToast('Por favor, complete todos los campos para crear su cuenta.', 'error');
+            return;
+        }
+
+        const users = getUsers();
+        if (users[newUsername]) {
+            showToast('Este nombre de usuario ya existe. Por favor, elija otro.', 'error');
+            return;
+        }
+
+        showToast('Registrando su cuenta...', 'info');
+
+        setTimeout(() => {
+            users[newUsername] = newPassword;
+            saveUsers(users);
+
+            showToast(`¡Su cuenta "${newUsername}" ha sido creada con éxito! Ahora puede iniciar sesión.`, 'success');
+            hideModal(createSessionModal);
+            showModal(loginModal);
+            createSessionForm.reset();
+        }, 1500);
+    });
+
+    // Formulario de Iniciar Sesión
+    loginForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+
+        if (!username || !password) {
+            showToast('Por favor, ingrese su usuario y contraseña.', 'error');
+            return;
+        }
+
+        const users = getUsers();
+
+        if (users[username] && users[username] === password) {
+            showToast('Inicio de sesión exitoso.', 'success');
+            hideModal(loginModal);
+            simulateProgressBarAndRedirect(username);
+        } else {
+            showToast('Credenciales incorrectas. Verifique su usuario y contraseña e intente nuevamente.', 'error');
+            loginForm.reset();
+            document.getElementById('username').focus();
+        }
+    });
+
+    // --- Event Listeners para Productos y Transacciones ---
+
+    // Botón "AGREGAR PRODUCTO"
+    addProductBtn.addEventListener('click', () => {
+        clearErrorMessages();
+        addProductModalTitle.textContent = 'Agregar Nuevo Producto';
+        saveProductBtn.textContent = 'GUARDAR PRODUCTO';
+        productIdToEdit.value = '';
+        addProductForm.reset();
+        productImageFile.value = ''; // Limpiar el input file
+        showModal(addProductModal); // <--- CORRECCIÓN: Asegúrate de que esta línea esté aquí
+        productNameInput.focus();
+    });
+
+    // Botón "CANCELAR" del modal de agregar/editar producto
+    closeAddProductModalBtn.addEventListener('click', () => {
+        closeAddProductModal();
+    });
+
+    // Función auxiliar para manejar el guardado/edición del producto (llamada desde el listener del formulario)
+    function handleProductSave(id, productName, imageUrl, productPrice, products) {
+        if (id) {
+            // Edición de producto
+            const productIndex = products.findIndex(p => p.id === id);
+            if (productIndex !== -1) {
+                products[productIndex].name = productName;
+                products[productIndex].imageUrl = imageUrl;
+                products[productIndex].price = productPrice;
+                saveProducts(products);
+                showToast(`Producto "${productName}" actualizado con éxito.`, 'success');
+                closeAddProductModal();
+                hideModal(productDetailsModal);
+            } else {
+                showToast('Error: Producto no encontrado para edición.', 'error');
+            }
+        } else {
+            // Nuevo producto
+            const newProduct = {
+                id: Date.now(),
+                name: productName,
+                imageUrl: imageUrl,
+                price: productPrice,
+                stock: 0
+            };
+            products.push(newProduct);
+            saveProducts(products);
+            showToast(`"${productName}" agregado con éxito. Stock inicializado en 0.`, 'success');
+            closeAddProductModal();
+        }
+    }
+
+    // Formulario de Agregar/Editar Producto
+    addProductForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        clearErrorMessages();
+
+        const id = productIdToEdit.value ? parseInt(productIdToEdit.value) : null;
+        const productName = productNameInput.value.trim();
+        const productPrice = parseFloat(productPriceInput.value.trim());
+        const file = productImageFile.files[0];
+
+        if (!productName || isNaN(productPrice) || productPrice < 0) {
+            showToast('Por favor, complete el nombre y el precio del producto correctamente (el precio debe ser un número positivo).', 'error');
+            return;
+        }
+
+        if (!id && !file) { // Si es un nuevo producto y no se ha seleccionado imagen
+            showToast('Por favor, seleccione una imagen para el producto.', 'error');
+            return;
+        }
+
+        let products = getProducts();
+        let imageUrlToSave = '';
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imageUrlToSave = e.target.result; // Data URL (Base64) de la imagen
+                handleProductSave(id, productName, imageUrlToSave, productPrice, products);
+            };
+            reader.onerror = function() {
+                showToast('Error al leer la imagen. Por favor, intente de nuevo.', 'error');
+            };
+            reader.readAsDataURL(file);
+
+        } else {
+            if (id) {
+                const existingProduct = products.find(p => p.id === id);
+                if (existingProduct) {
+                    imageUrlToSave = existingProduct.imageUrl;
+                }
+            }
+            handleProductSave(id, productName, imageUrlToSave, productPrice, products);
+        }
+    });
+
+    // Botón "ELIMINAR PRODUCTO"
+    deleteProductBtn.addEventListener('click', () => {
+        clearErrorMessages();
+        if (selectedProductId === null) {
+            showToast('Por favor, seleccione un producto para eliminar.', 'warning');
+            return;
+        }
+
+        if (!confirm('¿Está seguro de que desea eliminar este producto? Esta acción es irreversible.')) {
+            showToast('Eliminación cancelada.', 'info');
+            return;
+        }
+
+        let products = getProducts();
+        const updatedProducts = products.filter(product => product.id !== selectedProductId);
+
+        if (updatedProducts.length === products.length) {
+            showToast('Error: El producto seleccionado no se encontró.', 'error');
+            return;
+        }
+
+        saveProducts(updatedProducts);
+        showToast('Producto eliminado con éxito.', 'success');
+        selectedProductId = null;
+
+        // Quitar la clase 'selected' de la tarjeta eliminada si aún está en el DOM
+        const selectedCard = document.querySelector(`.product-card[data-product-id="${selectedProductId}"]`);
+        if (selectedCard) {
+            selectedCard.classList.remove('selected');
+        }
+    });
+
+    // Búsqueda de productos en tiempo real
+    productSearch.addEventListener('input', () => {
+        currentPage = 1; // Reiniciar paginación al buscar
+        renderProducts();
+        selectedProductId = null;
+        clearErrorMessages();
+    });
+
+    // --- Event Listeners para el Modal de Detalles del Producto ---
+    closeDetailsModalBtn.addEventListener('click', () => {
+        hideModal(productDetailsModal);
+        productInDetails = null;
+    });
+
+    // Botón EDITAR en el modal de detalles
+    editProductBtn.addEventListener('click', () => {
+        clearErrorMessages();
+        if (productInDetails) {
+            addProductModalTitle.textContent = 'Editar Producto';
+            saveProductBtn.textContent = 'GUARDAR CAMBIOS';
+            productIdToEdit.value = productInDetails.id;
+            productNameInput.value = productInDetails.name;
+            productPriceInput.value = parseFloat(productInDetails.price).toFixed(2);
+            productImageFile.value = ''; // Importante: limpia el input file para que el usuario elija un nuevo archivo si quiere cambiar la imagen. Si no elige, se mantendrá la imageUrl original.
+
+            hideModal(productDetailsModal);
+            showModal(addProductModal);
+            productNameInput.focus();
+        }
+    });
+
+    // Botón COMPRAR en el modal de detalles
+    buyProductBtn.addEventListener('click', () => {
+        clearErrorMessages();
+        hideModal(productDetailsModal);
+        populateProductDropdown(buyProductNameSelect);
+
+        if (productInDetails) {
+            buyProductNameSelect.value = productInDetails.id;
+            buyUnitPriceInput.value = parseFloat(productInDetails.price).toFixed(2);
+            buyQuantityInput.value = '1';
+            buyQuantityInput.disabled = false;
+            buyUnitPriceInput.disabled = false;
+            buyProductNameSelect.disabled = true; // Deshabilita selección si viene de detalles
+        } else {
+            buyProductNameSelect.value = '';
+            buyUnitPriceInput.value = '';
+            buyQuantityInput.value = '1';
+            buyQuantityInput.disabled = true;
+            buyUnitPriceInput.disabled = true;
+            buyProductNameSelect.disabled = false; // Habilita selección si no viene de detalles
+        }
+        calculateTotalPrice(buyQuantityInput, buyUnitPriceInput, buyTotalPriceInput);
+        showModal(buyTransactionModal);
+        buyQuantityInput.focus();
+    });
+
+    // Event listener para el cambio de selección en el modal de compra
+    buyProductNameSelect.addEventListener('change', () => {
+        const selectedProductId = buyProductNameSelect.value;
+        const products = getProducts();
+        const selectedProduct = products.find(p => p.id == selectedProductId);
+
+        if (selectedProduct) {
+            buyUnitPriceInput.value = parseFloat(selectedProduct.price).toFixed(2);
+            buyQuantityInput.value = '1'; // Resetear cantidad a 1 al cambiar producto
+            buyQuantityInput.disabled = false;
+            buyUnitPriceInput.disabled = false;
+        } else {
+            buyUnitPriceInput.value = '';
+            buyQuantityInput.value = '1';
+            buyQuantityInput.disabled = true;
+            buyUnitPriceInput.disabled = true;
+        }
+        calculateTotalPrice(buyQuantityInput, buyUnitPriceInput, buyTotalPriceInput);
+        buyQuantityInput.focus();
+    });
+
+    // Calcular precio total de compra en tiempo real
+    buyQuantityInput.addEventListener('input', () => calculateTotalPrice(buyQuantityInput, buyUnitPriceInput, buyTotalPriceInput));
+    buyUnitPriceInput.addEventListener('input', () => calculateTotalPrice(buyQuantityInput, buyUnitPriceInput, buyTotalPriceInput));
+
+    // Formulario de Compra
+    buyTransactionForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        clearErrorMessages();
+
+        const productId = buyProductNameSelect.value;
+        const quantity = parseInt(buyQuantityInput.value);
+        const unitPrice = parseFloat(buyUnitPriceInput.value);
+        const totalPrice = parseFloat(buyTotalPriceInput.value);
+
+        if (!productId || isNaN(quantity) || quantity <= 0 || isNaN(unitPrice) || unitPrice < 0) {
+            buyTransactionError.textContent = 'Por favor, seleccione un producto e ingrese una cantidad y un precio unitario válidos.';
+            showToast('Error en los datos de compra. Verifique los campos.', 'error');
+            return;
+        }
+
+        let products = getProducts();
+        const productIndex = products.findIndex(p => p.id == productId);
+
+        if (productIndex !== -1) {
+            products[productIndex].stock += quantity;
+            products[productIndex].price = unitPrice; // Actualizar el precio de venta del producto al precio de compra. Esto podría ser opcional.
+            saveProducts(products);
+
+            const transaction = {
+                id: Date.now(),
+                productId: productId,
+                productName: products[productIndex].name,
+                type: 'buy',
+                quantity: quantity,
+                unitPrice: unitPrice,
+                totalPrice: totalPrice,
+                date: new Date().toISOString()
+            };
+            saveTransaction(transaction);
+
+            showToast(`Compra de ${quantity} unidades de "${products[productIndex].name}" registrada con éxito.`, 'success');
+            closeBuyModal();
+            renderProducts();
+            updateSummaryDashboard();
+        } else {
+            buyTransactionError.textContent = 'Error: Producto no encontrado para registrar la compra.';
+            showToast('Error: Producto no encontrado.', 'error');
+        }
+    });
+
+    cancelBuyTransactionBtn.addEventListener('click', closeBuyModal);
+
+
+    // Botón VENDER en el modal de detalles
+    sellProductBtn.addEventListener('click', () => {
+        clearErrorMessages();
+        hideModal(productDetailsModal);
+        populateProductDropdown(sellProductNameSelect);
+
+        if (productInDetails) {
+            sellProductNameSelect.value = productInDetails.id;
+            sellUnitPriceInput.value = parseFloat(productInDetails.price).toFixed(2);
+            sellQuantityInput.value = '1';
+            sellQuantityInput.disabled = false;
+            sellUnitPriceInput.disabled = false;
+            sellProductNameSelect.disabled = true; // Deshabilita selección si viene de detalles
+            // Verificar stock inicial al abrir el modal
+            const currentStock = productInDetails.stock;
+            sellStockWarning.textContent = currentStock <= MIN_STOCK_ALERT && currentStock > CRITICAL_STOCK_ALERT
+                ? `¡Advertencia! Solo quedan ${currentStock} unidades.`
+                : currentStock <= CRITICAL_STOCK_ALERT
+                    ? `¡Alerta! Stock agotado (${currentStock} unidades).`
+                    : '';
+            if (currentStock <= CRITICAL_STOCK_ALERT) {
+                sellQuantityInput.disabled = true; // No permitir vender si no hay stock
+                sellUnitPriceInput.disabled = true;
+                sellTransactionError.textContent = "No hay stock disponible para vender este producto.";
+            } else {
+                sellTransactionError.textContent = ""; // Limpiar cualquier mensaje de error previo
+            }
+
+        } else {
+            sellProductNameSelect.value = '';
+            sellUnitPriceInput.value = '';
+            sellQuantityInput.value = '1';
+            sellQuantityInput.disabled = true;
+            sellUnitPriceInput.disabled = true;
+            sellProductNameSelect.disabled = false; // Habilita selección si no viene de detalles
+            sellStockWarning.textContent = ''; // Limpiar advertencia
+            sellTransactionError.textContent = '';
+        }
+        calculateTotalPrice(sellQuantityInput, sellUnitPriceInput, sellTotalPriceInput);
+        showModal(sellTransactionModal);
+        sellQuantityInput.focus();
+    });
+
+    // Event listener para el cambio de selección en el modal de venta
+    sellProductNameSelect.addEventListener('change', () => {
+        clearErrorMessages(); // Limpiar errores al cambiar de producto
+        const selectedProductId = sellProductNameSelect.value;
+        const products = getProducts();
+        const selectedProduct = products.find(p => p.id == selectedProductId);
+
+        if (selectedProduct) {
+            sellUnitPriceInput.value = parseFloat(selectedProduct.price).toFixed(2);
+            sellQuantityInput.value = '1'; // Resetear cantidad a 1 al cambiar producto
+
+            // Verificar stock al cambiar de producto
+            const currentStock = selectedProduct.stock;
+            sellStockWarning.textContent = currentStock <= MIN_STOCK_ALERT && currentStock > CRITICAL_STOCK_ALERT
+                ? `¡Advertencia! Solo quedan ${currentStock} unidades.`
+                : currentStock <= CRITICAL_STOCK_ALERT
+                    ? `¡Alerta! Stock agotado (${currentStock} unidades).`
+                    : '';
+
+            if (currentStock <= CRITICAL_STOCK_ALERT) {
+                sellQuantityInput.disabled = true;
+                sellUnitPriceInput.disabled = true;
+                sellTransactionError.textContent = "No hay stock disponible para vender este producto.";
+            } else {
+                sellQuantityInput.disabled = false;
+                sellUnitPriceInput.disabled = false;
+                sellTransactionError.textContent = "";
+            }
+
+        } else {
+            sellUnitPriceInput.value = '';
+            sellQuantityInput.value = '1';
+            sellQuantityInput.disabled = true;
+            sellUnitPriceInput.disabled = true;
+            sellStockWarning.textContent = '';
+            sellTransactionError.textContent = '';
+        }
+        calculateTotalPrice(sellQuantityInput, sellUnitPriceInput, sellTotalPriceInput);
+        sellQuantityInput.focus();
+    });
+
+    // Calcular precio total de venta en tiempo real y verificar stock
+    sellQuantityInput.addEventListener('input', () => {
+        clearErrorMessages();
+        const selectedProductId = sellProductNameSelect.value;
+        const products = getProducts();
+        const selectedProduct = products.find(p => p.id == selectedProductId);
+        const quantityToSell = parseInt(sellQuantityInput.value);
+
+        if (selectedProduct && !isNaN(quantityToSell) && quantityToSell > 0) {
+            if (quantityToSell > selectedProduct.stock) {
+                sellTransactionError.textContent = `No hay suficiente stock. Stock disponible: ${selectedProduct.stock}`;
+                showToast('Stock insuficiente para la venta.', 'error');
+                sellQuantityInput.value = selectedProduct.stock; // Ajustar cantidad al stock máximo
+                calculateTotalPrice(sellQuantityInput, sellUnitPriceInput, sellTotalPriceInput); // Recalcular con la cantidad ajustada
+            } else {
+                sellTransactionError.textContent = '';
+            }
+        } else {
+             sellTransactionError.textContent = ''; // Limpiar si la cantidad es inválida o no hay producto
+        }
+        calculateTotalPrice(sellQuantityInput, sellUnitPriceInput, sellTotalPriceOutput);
+    });
+
+    sellUnitPriceInput.addEventListener('input', () => calculateTotalPrice(sellQuantityInput, sellUnitPriceInput, sellTotalPriceInput));
+
+
+    // Formulario de Venta
+    sellTransactionForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        clearErrorMessages();
+
+        const productId = sellProductNameSelect.value;
+        const quantity = parseInt(sellQuantityInput.value);
+        const unitPrice = parseFloat(sellUnitPriceInput.value);
+        const totalPrice = parseFloat(sellTotalPriceInput.value);
+
+        if (!productId || isNaN(quantity) || quantity <= 0 || isNaN(unitPrice) || unitPrice < 0) {
+            sellTransactionError.textContent = 'Por favor, seleccione un producto e ingrese una cantidad y un precio unitario válidos.';
+            showToast('Error en los datos de venta. Verifique los campos.', 'error');
+            return;
+        }
+
+        let products = getProducts();
+        const productIndex = products.findIndex(p => p.id == productId);
+
+        if (productIndex !== -1) {
+            if (products[productIndex].stock >= quantity) {
+                products[productIndex].stock -= quantity;
+                saveProducts(products);
+
+                const transaction = {
+                    id: Date.now(),
+                    productId: productId,
+                    productName: products[productIndex].name,
+                    type: 'sell',
+                    quantity: quantity,
+                    unitPrice: unitPrice,
+                    totalPrice: totalPrice,
+                    date: new Date().toISOString()
+                };
+                saveTransaction(transaction);
+
+                showToast(`Venta de ${quantity} unidades de "${products[productIndex].name}" registrada con éxito.`, 'success');
+                closeSellModal();
+                renderProducts();
+                updateSummaryDashboard();
+            } else {
+                sellTransactionError.textContent = `No hay suficiente stock. Stock disponible: ${products[productIndex].stock}`;
+                showToast('Stock insuficiente para la venta.', 'error');
+            }
+        } else {
+            sellTransactionError.textContent = 'Error: Producto no encontrado para registrar la venta.';
+            showToast('Error: Producto no encontrado.', 'error');
+        }
+    });
+
+    closeSellTransactionBtn.addEventListener('click', closeSellModal);
+
+    // --- Historial de Transacciones ---
+
+    // Función para renderizar la tabla de transacciones
+    function renderTransactionsTable() {
+        transactionsTableBody.innerHTML = '';
+        const allTransactions = getTransactions();
+
+        const filterDate = transactionDateFilter.value;
+        const filterType = transactionTypeFilter.value;
+        const filterProduct = transactionProductSearch.value.toLowerCase().trim();
+
+        const filteredTransactions = allTransactions.filter(t => {
+            const transactionDate = t.date.slice(0, 10); // Obtener solo la fecha YYYY-MM-DD
+            const matchesDate = !filterDate || transactionDate === filterDate;
+            const matchesType = !filterType || t.type === filterType;
+            const matchesProduct = !filterProduct || t.productName.toLowerCase().includes(filterProduct);
+            return matchesDate && matchesType && matchesProduct;
+        }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Ordenar por fecha, las más recientes primero
+
+        if (filteredTransactions.length === 0) {
+            noTransactionsMessage.style.display = 'block';
+            transactionsTableBody.style.display = 'none'; // Ocultar tbody si no hay datos
+            return;
+        } else {
+            noTransactionsMessage.style.display = 'none';
+            transactionsTableBody.style.display = 'table-row-group'; // Mostrar tbody
+        }
+
+        filteredTransactions.forEach(t => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${new Date(t.date).toLocaleString('es-PE', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                <td class="transaction-type-${t.type}">${t.type === 'buy' ? 'Compra' : 'Venta'}</td>
+                <td>${t.productName}</td>
+                <td>${t.quantity}</td>
+                <td>S/ ${parseFloat(t.unitPrice).toFixed(2)}</td>
+                <td>S/ ${parseFloat(t.totalPrice).toFixed(2)}</td>
+            `;
+            transactionsTableBody.appendChild(row);
+        });
+    }
+
+    // Event listener para el botón "VER TRANSACCIONES"
+    viewTransactionsBtn.addEventListener('click', () => {
+        clearErrorMessages();
+        renderTransactionsTable(); // Renderiza la tabla al abrir el modal
+        showModal(transactionsHistoryModal);
+    });
+
+    // Event listeners para los filtros de transacciones
+    transactionDateFilter.addEventListener('change', renderTransactionsTable);
+    transactionTypeFilter.addEventListener('change', renderTransactionsTable);
+    transactionProductSearch.addEventListener('input', renderTransactionsTable);
+
+    // Event listener para limpiar filtros de transacciones
+    resetTransactionFiltersBtn.addEventListener('click', () => {
+        transactionDateFilter.value = '';
+        transactionTypeFilter.value = '';
+        transactionProductSearch.value = '';
+        renderTransactionsTable(); // Vuelve a renderizar sin filtros
+    });
+
+    // Event listener para cerrar el modal de historial de transacciones
+    closeTransactionsHistoryBtn.addEventListener('click', () => {
+        hideModal(transactionsHistoryModal);
+        // Opcional: Resetear filtros al cerrar el modal si prefieres
+        // resetTransactionFiltersBtn.click();
+    });
+
+    // --- Inicialización al cargar la página ---
+    // (Asegura que los productos se rendericen y el dashboard de resumen se actualice si ya hay datos)
+    renderProducts();
+    updateSummaryDashboard();
+});
+
+	
+	</script>
+</body>
+</html>
